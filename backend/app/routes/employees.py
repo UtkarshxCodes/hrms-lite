@@ -20,23 +20,59 @@ def create_employee(data: schemas.EmployeeCreate, db: Session = Depends(get_db))
     ).first()
 
     if exists:
-        raise HTTPException(status_code=409, detail="Employee already exists")
+        raise HTTPException(status_code=409, detail="Employee with this ID or email already exists")
 
     emp = models.Employee(**data.dict())
     db.add(emp)
     db.commit()
-    return emp
+    db.refresh(emp)
+    return {
+        "id": str(emp.id),
+        "employee_id": emp.employee_id,
+        "full_name": emp.full_name,
+        "email": emp.email,
+        "department": emp.department
+    }
 
 @router.get("")
 def list_employees(db: Session = Depends(get_db)):
-    return db.query(models.Employee).all()
+    employees = db.query(models.Employee).all()
+    return [
+        {
+            "id": str(emp.id),
+            "employee_id": emp.employee_id,
+            "full_name": emp.full_name,
+            "email": emp.email,
+            "department": emp.department
+        }
+        for emp in employees
+    ]
 
-@router.delete("/{id}")
-def delete_employee(id: str, db: Session = Depends(get_db)):
-    emp = db.query(models.Employee).filter(models.Employee.id == id).first()
+@router.get("/{employee_id}")
+def get_employee(employee_id: str, db: Session = Depends(get_db)):
+    emp = db.query(models.Employee).filter(
+        models.Employee.employee_id == employee_id
+    ).first()
+    if not emp:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    return {
+        "id": str(emp.id),
+        "employee_id": emp.employee_id,
+        "full_name": emp.full_name,
+        "email": emp.email,
+        "department": emp.department
+    }
+
+@router.delete("/{employee_id}")
+def delete_employee(employee_id: str, db: Session = Depends(get_db)):
+    emp = db.query(models.Employee).filter(
+        models.Employee.employee_id == employee_id
+    ).first()
     if not emp:
         raise HTTPException(status_code=404, detail="Employee not found")
 
+    # Delete associated attendance records
+    db.query(models.Attendance).filter_by(employee_id=emp.id).delete()
     db.delete(emp)
     db.commit()
-    return {"message": "Employee deleted"}
+    return {"message": "Employee deleted successfully"}

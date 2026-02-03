@@ -1,14 +1,19 @@
-import { Routes, Route, NavLink } from "react-router-dom";
+import { Routes, Route, NavLink, useNavigate } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Employees from "./pages/Employees";
 import Attendance from "./pages/Attendance";
 import "./App.css";
 
 export default function App() {
+  const navigate = useNavigate();
+
   return (
     <div className="app-container">
       <nav className="navbar">
-        <div className="navbar-brand">HRMS Lite</div>
+        <div className="navbar-brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
+          <span className="hrms-text">HRMS</span>
+          <span className="lite-text">lite</span>
+        </div>
         <div className="navbar-links">
           <NavLink
             to="/"

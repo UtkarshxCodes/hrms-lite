@@ -37,7 +37,13 @@ def mark_attendance(data: schemas.AttendanceCreate, db: Session = Depends(get_db
     )
     db.add(att)
     db.commit()
-    return att
+    db.refresh(att)
+    return {
+        "id": str(att.id),
+        "employee_id": str(att.employee_id),
+        "date": att.date.isoformat(),
+        "status": att.status
+    }
 
 @router.get("/{employee_id}")
 def get_attendance(
@@ -63,7 +69,15 @@ def get_attendance(
         query = query.filter(models.Attendance.date <= end_date)
 
     records = query.order_by(models.Attendance.date.desc()).all()
-    return records
+    return [
+        {
+            "id": str(r.id),
+            "employee_id": str(r.employee_id),
+            "date": r.date.isoformat(),
+            "status": r.status
+        }
+        for r in records
+    ]
 
 @router.get("/{employee_id}/stats")
 def get_attendance_stats(employee_id: str, db: Session = Depends(get_db)):
